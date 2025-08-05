@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>WebRTC Screen Share Client</title>
+  </head>
+  <body>
+    <h1>WebRTC Screen Share Client</h1>
+    <video id="video" autoplay playsinline controls></video>
+
+    <script>
+      const pc = new RTCPeerConnection();
+
+      pc.ontrack = (event) => {
+        const video = document.getElementById("video");
+        video.srcObject = event.streams[0];
+      };
+
+      async function negotiate() {
+        const offer = await pc.createOffer();
+        await pc.setLocalDescription(offer);
+
+        const response = await fetch("/offer", {
+          method: "POST",
+          body: JSON.stringify({
+            sdp: pc.localDescription.sdp,
+            type: pc.localDescription.type,
+          }),
+          headers: {
+            "Content-Type": "application/json",
+          },
+        });
+
+        const answer = await response.json();
+        await pc.setRemoteDescription(answer);
+      }
+
+      negotiate();
+    </script>
+  </body>
+</html>
